@@ -1,15 +1,13 @@
-defmodule ExDeployer.Module.Driver do
-  defmacro __using__(:GitLabDriver) do
-    quote do
-      alias ExDeployer.Module.GitDriver.GitLab, as: GitDriver
-    end
-  end
+defmodule Axis.Module.Driver do
+  @spec import(binary) :: Axis.Module.GitDriver.GitLab
+  def import(driver) do
+    case driver do
+      "gitlab" ->
+        with do
+          alias Axis.Module.GitDriver.GitLab, as: GitDriver
 
-  defmacro __using__(:GitHubDriver) do
-    quote do
-      # def do
-      exit("github")
-      # end
+          GitDriver
+        end
     end
   end
 end

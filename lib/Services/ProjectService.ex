@@ -1,4 +1,4 @@
-defmodule ExDeployer.Services.ProjectService do
+defmodule Axis.Services.ProjectService do
   @perms """
   chgrp -Rf www-data {{PROJECT_DIR}}/storage {{PROJECT_DIR}}/bootstrap &&
   chmod -Rf ug+rwx {{PROJECT_DIR}}/storage {{PROJECT_DIR}}/bootstrap &&
@@ -6,11 +6,11 @@ defmodule ExDeployer.Services.ProjectService do
   chmod -Rf 775 {{PROJECT_DIR}}/storage {{PROJECT_DIR}}/bootstrap
   """
 
-  alias ExDeployer.Services.SSHService, as: SSHService
-  alias ExDeployer.Services.ServerService, as: ServerService
-  alias ExDeployer.Services.Email.BackupEnvService, as: BackupEnvService
-  alias ExDeployer.Mailer, as: Mailer
-  alias ExDeployer.Utils, as: Utils
+  alias Axis.Services.SSHService, as: SSHService
+  alias Axis.Services.ServerService, as: ServerService
+  alias Axis.Services.Email.BackupEnvService, as: BackupEnvService
+  alias Axis.Mailer, as: Mailer
+  alias Axis.Utils, as: Utils
 
   def storage_perms(conn, dir) do
     cmd =
@@ -35,17 +35,16 @@ defmodule ExDeployer.Services.ProjectService do
               :noremove
             )
 
-          content |> BackupEnvService.backup_env_email() |> Mailer.deliver_now()
+          content
+          |> String.replace("\n", "<br>")
+          |> BackupEnvService.backup_env_email()
+          |> Mailer.deliver_now()
 
           save_enviroment(content)
-        else
-          nil
         end
 
       SSHService.execute(conn, "rm -r #{dir}")
       path
-    else
-      nil
     end
   end
 

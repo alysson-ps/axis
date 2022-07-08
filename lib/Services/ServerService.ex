@@ -1,5 +1,5 @@
-defmodule ExDeployer.Services.ServerService do
-  alias ExDeployer.Services.SSHService, as: SSHService
+defmodule Axis.Services.ServerService do
+  alias Axis.Services.SSHService, as: SSHService
 
   @spec has(pid, binary, atom) :: boolean
   def has(conn, path, type) do

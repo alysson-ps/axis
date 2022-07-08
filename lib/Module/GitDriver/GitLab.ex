@@ -1,10 +1,10 @@
-defmodule ExDeployer.Module.GitDriver.GitLab do
-  alias ExDeployer.Utils, as: Utils
-  alias ExDeployer.Http, as: HTTP
+defmodule Axis.Module.GitDriver.GitLab do
+  alias Axis.Utils, as: Utils
+  alias Axis.Http, as: HTTP
 
   def get_remote_url(repository) do
     HTTP.start()
-    projectId = repository.project_id
+    projectId = Integer.to_string(repository.project_id)
     user = repository.deploy.user
     token = repository.deploy.token
     privateToken = repository.private_token
@@ -39,7 +39,7 @@ defmodule ExDeployer.Module.GitDriver.GitLab do
   def tag_exist(repository) do
     HTTP.start()
     privateToken = repository.private_token
-    projectId = repository.project_id
+    projectId = Integer.to_string(repository.project_id)
     branch = repository.branch
 
     headers = [

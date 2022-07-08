@@ -1,4 +1,4 @@
-defmodule ExDeployer.Services.Email.BackupEnvService do
+defmodule Axis.Services.Email.BackupEnvService do
   import Bamboo.Email
 
   @spec backup_env_email(binary) :: Bamboo.Email.t()

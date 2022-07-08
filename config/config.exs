@@ -1,6 +1,6 @@
 import Mix.Config
 
-config :ex_deployer, ExDeployer.Mailer,
+config :ex_deployer, Axis.Mailer,
   adapter: Bamboo.SMTPAdapter,
   server: "smtp.mailtrap.io",
   port: 2525,
@@ -13,7 +13,7 @@ config :ex_deployer, ExDeployer.Mailer,
   retries: 1
 
 # import_config "#{Mix.env()}.exs"
-config :ex_deployer, ExDeployer.DeployResource, """
+config :ex_deployer, Axis.DeployResource, """
 {
   "repository": {
     "project_id": "",

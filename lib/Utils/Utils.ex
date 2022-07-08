@@ -1,4 +1,4 @@
-defmodule ExDeployer.Utils do
+defmodule Axis.Utils do
   def typeof(a) do
     cond do
       is_float(a) -> "float"
@@ -39,8 +39,28 @@ defmodule ExDeployer.Utils do
     {String.to_atom(key), value}
   end
 
-  def json_decode(json) do
-    json = json |> Jason.decode!()
+  def json_decode(json, opt \\ []) do
+    json =
+      if opt == :config do
+        json
+        |> String.split("\n")
+        |> Enum.filter(&(!String.contains?(&1, "//")))
+        |> Enum.join("\n")
+        |> Jason.decode!()
+      else
+        json
+        |> Jason.decode!()
+      end
+
+    case json |> Axis.Validator.validate(opt) do
+      {:error, errors} ->
+        with do
+          throw({:configException, errors})
+        end
+
+      :ok ->
+        nil
+    end
 
     case json do
       json when is_list(json) ->

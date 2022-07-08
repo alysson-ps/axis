@@ -1,11 +1,15 @@
-defmodule ExDeployer.Services.HostService do
-  alias ExDeployer.Outputs, as: Outputs
-  alias ExDeployer.Services.ProjectService, as: ProjectService
-  alias ExDeployer.Services.ServerService, as: ServerService
-  alias ExDeployer.Services.SSHService, as: SSHService
-  alias ExDeployer.Services.TasksService, as: TasksService
+defmodule Axis.Services.HostService do
+  alias Axis.Outputs, as: Outputs
+  alias Axis.Services.ProjectService, as: ProjectService
+  alias Axis.Services.ServerService, as: ServerService
+  alias Axis.Services.SSHService, as: SSHService
+  alias Axis.Services.TasksService, as: TasksService
 
-  def hosts(%{project: project, hosts: hosts, repository: %{branch: branch}} = _config, urls) do
+  def hosts(
+        %{project: project, hosts: hosts, repository: %{branch: branch}, strategy: strategy} =
+          _config,
+        urls
+      ) do
     dir = project.directory
 
     vars = %{
@@ -41,7 +45,18 @@ defmodule ExDeployer.Services.HostService do
           conn
         )
 
-      tasks |> TasksService.run(vars, conn)
+      tasks
+      |> TasksService.run(
+        vars,
+        conn,
+        Map.get(
+          %{
+            "clone-always" => :cloneAlways,
+            "checkout-tag" => :checkoutTag
+          },
+          strategy
+        )
+      )
 
       if !is_nil(env) do
         Outputs.info("recovering dotenv")

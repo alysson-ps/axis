@@ -1,4 +1,4 @@
-defmodule ExDeployer.Services.SSHService do
+defmodule Axis.Services.SSHService do
   @spec connect(%{
           :host => String.t(),
           :password => String.t(),

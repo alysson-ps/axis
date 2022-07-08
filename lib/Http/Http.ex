@@ -1,4 +1,4 @@
-defmodule ExDeployer.Http do
+defmodule Axis.Http do
   use HTTPoison.Base
 
   def process_request_url(url) do
