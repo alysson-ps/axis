@@ -62,13 +62,25 @@ defmodule Axis.Services.TasksService do
   defp checkout_tag do
     [
       {%{
-         command: "git checkout --git-dir={{PROJECT_DIR}}/.git "
+         command: "git fetch --git-dir={{PROJECT_DIR}}/.git --tags ",
+         description: "fetch all tags",
+         log: true
+       }},
+      {%{
+         command: "git checkout --git-dir={{PROJECT_DIR}}/.git ",
+         description: "checkout tag in projects",
+         log: true
        }}
     ]
   end
 
   defp clone_always do
     [
+      {%{
+         command: "rm -r {{PROJECT_DIR}}",
+         description: "remove project",
+         log: false
+       }},
       {%{
          command:
            "git clone --origin deploy --branch {{BRANCH}} {{URL_REPOSITORY}} {{PROJECT_DIR}}",
@@ -78,7 +90,7 @@ defmodule Axis.Services.TasksService do
       {%{
          command: "composer install --working-dir={{PROJECT_DIR}}",
          description: "execute composer install",
-         log: true
+         log: false
        }},
       {%{
          command:

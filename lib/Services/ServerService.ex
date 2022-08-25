@@ -22,7 +22,9 @@ defmodule Axis.Services.ServerService do
     if stdout == 1, do: true, else: false
   end
 
-  def cp_env(conn, content, dir) do
-    SSHService.execute(conn, "echo #{content} >> #{Path.join([dir, ".env"])}")
+  @spec create_temp_file(pid, binary, binary) :: {atom, any}
+  def create_temp_file(conn, content, filename) do
+    command = "TMP=$(mktemp /tmp/#{filename}-XXXX) && echo \"#{content}\" >> $TMP && echo $TMP"
+    conn |> SSHService.execute(command, :noremove)
   end
 end

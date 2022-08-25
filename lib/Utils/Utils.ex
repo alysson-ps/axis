@@ -11,8 +11,12 @@ defmodule Axis.Utils do
       is_tuple(a) -> "tuple"
       is_map(a) -> "map"
       true -> "idunno"
-    end
+    end |> IO.inspect()
+    nil
   end
+
+  @spec to_boolean(any) :: boolean
+  def to_boolean(value), do: !!value
 
   defp keys_atoms(value) when is_binary(value) do
     # IO.inspect("with binary")

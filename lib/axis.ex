@@ -57,7 +57,6 @@ defmodule Axis.CLI do
       end
     catch
       # refactor with method for to parse of error
-
       {:configException, errors} ->
         with do
           errors =
@@ -101,6 +100,9 @@ defmodule Axis.CLI do
   end
 
   defp start(%{repository: repository} = config) do
+
+    Application.put_env(:ex_deployer, :config, config)
+
     driver = config.driver |> GitDriver.import()
 
     {:ok, remotes} = driver.get_remote_url(repository)
@@ -109,6 +111,7 @@ defmodule Axis.CLI do
       throw("the informed tag does not exist")
     end
 
-    HostService.hosts(config, remotes)
+    HostService.hosts(remotes)
+    nil
   end
 end

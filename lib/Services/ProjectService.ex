@@ -21,36 +21,42 @@ defmodule Axis.Services.ProjectService do
     SSHService.execute(conn, cmd)
   end
 
-  @spec enviroment(boolean, binary, pid) :: nil | binary
   def enviroment(exists, dir, conn) do
+    # SSHService.execute(conn, "rm -r #{dir}")
+    config = Application.fetch_env!(:ex_deployer, :config)
+
+    %{env: %{backup: %{active: active, send_to: emails}}} = config
+
     if exists do
       env = Path.join([dir, ".env"])
 
-      path =
-        if ServerService.has(conn, env, :file) do
-          {:ok, content} =
-            SSHService.execute(
-              conn,
-              "cat #{env}",
-              :noremove
-            )
+      if ServerService.has(conn, env, :file) do
+        {:ok, content} =
+          SSHService.execute(
+            conn,
+            "cat #{env}",
+            :noremove
+          )
 
-          content
-          |> String.replace("\n", "<br>")
-          |> BackupEnvService.backup_env_email()
-          |> Mailer.deliver_now()
-
-          save_enviroment(content)
+        if active do
+          Enum.each(emails, fn email ->
+            content
+            |> String.replace("\n", "<br>")
+            |> BackupEnvService.backup_env_email(email)
+            |> Mailer.deliver_now()
+          end)
         end
 
-      SSHService.execute(conn, "rm -r #{dir}")
-      path
+        {:ok, file} = ServerService.create_temp_file(conn, content, "laravel-ci-env")
+
+        file |> String.replace("\n", "")
+      end
     end
   end
 
-  defp save_enviroment(content) do
-    {:ok, path} = Briefly.create()
-    File.write!(path, content)
-    path
-  end
+  # defp save_enviroment(content) do
+  #   {:ok, path} = Briefly.create()
+  #   File.write!(path, content)
+  #   path
+  # end
 end
