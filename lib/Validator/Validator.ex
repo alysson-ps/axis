@@ -11,11 +11,18 @@ defmodule Axis.Validator do
 
   defp schema do
     %{
+      "$schema" => "http://json-schema.org/draft-06/schema#",
+      "$id" => "http://json-schema.org/draft-06/schema#",
       "type" => "object",
       "properties" => %{
         "repository" => %{
           "type" => "object",
           "properties" => %{
+            "driver" => %{
+              "type" => "string",
+              "minLength" => 1,
+              "pattern" => "^(gitlab)|(github)$"
+            },
             "project_id" => %{
               "type" => "integer"
             },
@@ -38,7 +45,7 @@ defmodule Axis.Validator do
               "minLength" => 1
             }
           },
-          "required" => ["project_id", "private_token"]
+          "required" => ["project_id", "private_token", "driver", "deploy"]
         },
         "env" => %{
           "type" => "object",
@@ -51,8 +58,8 @@ defmodule Axis.Validator do
                 },
                 "send_to" => %{
                   "type" => "array",
-                  "minItems" => 1,
-                  "uniqueItems" => true
+                  "minItems" => 0,
+                  "uniqueItems" => true,
                 }
               }
             }
@@ -73,17 +80,79 @@ defmodule Axis.Validator do
         },
         "hosts" => %{
           "type" => "object",
-          "minProperties" => 1
-        },
-        "driver" => %{
-          "type" => "string",
-          "minLength" => 1
+          "minProperties" => 1,
+          "propertyNames" => %{
+            "pattern" => "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$"
+          },
+          "patternProperties" => %{
+            "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$" => %{
+              "type" => "object",
+              "properties" => %{
+                "user" => %{
+                  "type" => "string",
+                  "minLength" => 1
+                },
+                "password" => %{
+                  "type" => "string",
+                  "minLength" => 1
+                },
+                "directory" => %{
+                  "type" => "string",
+                  "minLength" => 1
+                },
+                "tasks" => %{
+                  "type" => "array",
+                  "minItems" => 0,
+                  "items" => %{
+                    "type" => "object",
+                    "properties" => %{
+                      "command" => %{
+                        "type" => "string",
+                        "minLength" => 3
+                      },
+                      "description" => %{
+                        "type" => "string",
+                        "minLength" => 3
+                      },
+                      "log" => %{
+                        "type" => "boolean"
+                      },
+                      "if" => %{
+                        "type" => "object",
+                        "properties" => %{
+                          "project_exist" => %{
+                            "type" => "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "required" => [
+                      "command",
+                      "log",
+                      "description"
+                    ]
+                  }
+                }
+              }
+            }
+          }
         },
         "strategy" => %{
           "type" => "string",
-          "minLength" => 1
+          "minLength" => 1,
+          "pattern" => "^(clone-always)|(checkout-tag)$"
+        },
+        "debug" => %{
+          "type" => "boolean",
         }
       },
+      "required" => [
+        "strategy",
+        "repository",
+        "hosts",
+        "project",
+        "env",
+      ],
       "additionalProperties" => false
     }
   end

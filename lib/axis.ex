@@ -69,7 +69,9 @@ defmodule Axis.CLI do
               [key, message]
             end)
 
-          Axis.Outputs.banner(:configError)
+          if {:unix, :linux} == :os.type(),
+            do: Axis.Outputs.banner(:configError)
+
           Prompt.table([["json key", "message error"]] ++ errors, header: true)
         end
     end
@@ -100,10 +102,9 @@ defmodule Axis.CLI do
   end
 
   defp start(%{repository: repository} = config) do
-
     Application.put_env(:ex_deployer, :config, config)
 
-    driver = config.driver |> GitDriver.import()
+    driver = repository.driver |> GitDriver.import()
 
     {:ok, remotes} = driver.get_remote_url(repository)
 
@@ -112,6 +113,5 @@ defmodule Axis.CLI do
     end
 
     HostService.hosts(remotes)
-    nil
   end
 end

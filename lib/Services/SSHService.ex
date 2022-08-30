@@ -19,8 +19,9 @@ defmodule Axis.Services.SSHService do
           {:ok, output}
         end
 
-      {:ok, _output, 1} ->
+      {:ok, output, 1} ->
         with do
+          IO.inspect(output)
           {:ok, :warning}
         end
 
@@ -38,8 +39,9 @@ defmodule Axis.Services.SSHService do
           {:ok, output}
         end
 
-      {:ok, _output, 1} ->
+      {:ok, output, 1} ->
         with do
+          IO.inspect(output)
           {:ok, :warning}
         end
 

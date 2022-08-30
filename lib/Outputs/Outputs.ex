@@ -24,6 +24,7 @@ defmodule Axis.Outputs do
     end
   end
 
+  @spec banner(:configError) :: :ok
   def banner(:configError) do
     (IO.ANSI.red() <>
        """

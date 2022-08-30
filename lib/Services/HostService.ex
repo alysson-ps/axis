@@ -1,14 +1,10 @@
 defmodule Axis.Services.HostService do
-  @strategy %{
-    "clone-always" => :cloneAlways,
-    "checkout-tag" => :checkoutTag
-  }
-
   alias Axis.Outputs, as: Outputs
-  alias Axis.Services.ProjectService, as: ProjectService
+  # alias Axis.Services.ProjectService, as: ProjectService
   alias Axis.Services.ServerService, as: ServerService
   alias Axis.Services.SSHService, as: SSHService
   alias Axis.Services.TasksService, as: TasksService
+
 
   def hosts(urls) do
     # get config of env elixir
@@ -25,8 +21,19 @@ defmodule Axis.Services.HostService do
     }
 
     hosts
-    |> Enum.each(fn {host, %{user: user, password: password, tasks: tasks} = _value} ->
+    |> Enum.each(fn {host, %{user: user, password: password, tasks: tasks} = values} ->
       Outputs.info("Deploying #{project.name} to #{host} - branch: #{branch}")
+
+      {vars, dir} =
+        if Map.has_key?(values, :directory),
+          do:
+            {%{
+               "{{PROJECT_DIR}}" => values.directory,
+               "{{URL_REPOSITORY}}" => urls.deploy,
+               "{{URL_REPOSITORY_ORIGIN}}" => urls.origin,
+               "{{BRANCH}}" => branch
+             }, values.directory},
+          else: {vars, dir}
 
       # connection ssh
       conn =
@@ -42,21 +49,27 @@ defmodule Axis.Services.HostService do
       exists = conn |> ServerService.has(dir, :directory)
 
       Outputs.info("the project exists in server: #{exists}")
-      Outputs.info("saving dotenv (.env) in file temp", :newline)
+      # Outputs.info("saving dotenv (.env) in file temp", :newline)
 
-      ProjectService.enviroment(
-        exists,
-        dir,
-        conn
-      )
-      |> IO.inspect()
+      # ProjectService.enviroment(
+      #   exists,
+      #   dir,
+      #   conn
+      # )
 
-      tasks
-      |> TasksService.run(
-        vars,
-        conn,
-        Map.get(@strategy, strategy)
-      )
+      SSHService.execute(conn, ". testerc'") |> IO.inspect()
+      SSHService.execute(conn, "pwd") |> IO.inspect()
+
+
+      # tasks
+      # |> TasksService.run(
+      #   vars,
+      #   conn,
+      #   strategy,
+      #   %{
+      #     project_exist: exists
+      #   }
+      # )
 
       # if !is_nil(env) do
       #   Outputs.info("recovering dotenv")
