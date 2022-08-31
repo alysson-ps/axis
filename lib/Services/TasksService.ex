@@ -3,10 +3,7 @@ defmodule Axis.Services.TasksService do
   alias Axis.Outputs, as: Outputs
   alias Axis.Services.SSHService, as: SSHService
 
-  # "clone-always" => :cloneAlways,
-  # "checkout-tag
-
-  def run(tasks, maps_vars, conn, "clone-always",  %{project_exist: exist} = params) do
+  def run(tasks, maps_vars, conn, "clone-always", directory, %{project_exist: exist} = params) do
     Outputs.info("Running tasks", :newline)
 
     tasks =
@@ -15,21 +12,25 @@ defmodule Axis.Services.TasksService do
         else: checkout_tag() ++ tasks
 
     Enum.filter(tasks, fn task ->
-      execIf = elem(task, 0) |> Map.get(:if, true)
+      if_key = elem(task, 0) |> Map.get(:if, true)
 
-      result = if is_atom(execIf),
+      if is_atom(if_key),
         do: true,
         else:
-          Enum.reduce(execIf,true, fn current, prev ->
+          Enum.reduce(if_key, true, fn current, prev ->
             {key, valor} = current
             prev && params[key] == valor
           end)
-        result |> IO.inspect()
     end)
 
     Enum.map(clone_always() ++ tasks, fn task ->
       task = elem(task, 0)
-      command = if task.log, do: task.command <> " | tee -a Axis.log", else: task.command
+
+      command =
+        if task.log,
+          do: "cd #{directory} && /usr/bin/env " <> task.command <> " | tee -a Axis.log",
+          else: "cd #{directory} && /usr/bin/env " <> task.command
+
       command = Utils.parser_vars(command, maps_vars)
 
       Outputs.text(
@@ -52,7 +53,7 @@ defmodule Axis.Services.TasksService do
     end)
   end
 
-  def run(tasks, maps_vars, conn, "checkout-tag", %{project_exist: exist} = params) do
+  def run(tasks, maps_vars, conn, "checkout-tag", directory, %{project_exist: exist} = params) do
     Outputs.info("Running tasks", :newline)
 
     tasks =
@@ -61,21 +62,25 @@ defmodule Axis.Services.TasksService do
         else: checkout_tag() ++ tasks
 
     Enum.filter(tasks, fn task ->
-      execIf = elem(task, 0) |> Map.get(:if, true)
+      if_key = elem(task, 0) |> Map.get(:if, true)
 
-      result = if is_atom(execIf),
+      if is_atom(if_key),
         do: true,
         else:
-          Enum.reduce(execIf,true, fn current, prev ->
+          Enum.reduce(if_key, true, fn current, prev ->
             {key, valor} = current
             prev && params[key] == valor
           end)
-        result |> IO.inspect()
     end)
 
     Enum.map(tasks, fn task ->
       task = elem(task, 0)
-      command = if task.log, do: task.command <> " | tee -a Axis.log", else: task.command
+
+      command =
+        if task.log,
+          do: "cd #{directory} && /usr/bin/env " <> task.command <> " | tee -a Axis.log",
+          else: "cd #{directory} && /usr/bin/env " <> task.command
+
       command = Utils.parser_vars(command, maps_vars)
 
       Outputs.text(
@@ -101,14 +106,14 @@ defmodule Axis.Services.TasksService do
   defp checkout_tag do
     [
       {%{
-         command: "git fetch --git-dir={{PROJECT_DIR}}/.git/ --tags",
+         command: "git fetch deploy",
          description: "fetch all tags",
-         log: true
+         log: false
        }},
       {%{
-         command: "git checkout --git-dir={{PROJECT_DIR}}/.git/ {{BRANCH}}",
+         command: "git checkout {{BRANCH}}",
          description: "checkout tag in projects",
-         log: true
+         log: false
        }}
     ]
   end
@@ -116,7 +121,7 @@ defmodule Axis.Services.TasksService do
   defp clone_always do
     [
       {%{
-         command: "rm -r {{PROJECT_DIR}}",
+         command: "rm -r .",
          description: "remove project",
          log: false
        }},
@@ -127,13 +132,12 @@ defmodule Axis.Services.TasksService do
          log: false
        }},
       {%{
-         command:
-           "git --git-dir={{PROJECT_DIR}}/.git remote add origin {{URL_REPOSITORY_ORIGIN}}",
+         command: "git remote add origin {{URL_REPOSITORY_ORIGIN}}",
          description: "add remote in origin in project",
          log: false
        }},
       {%{
-         command: "composer install --working-dir={{PROJECT_DIR}}",
+         command: "composer install",
          description: "execute composer install",
          log: false
        }}
@@ -149,8 +153,7 @@ defmodule Axis.Services.TasksService do
          log: false
        }},
       {%{
-         command:
-           "git --git-dir={{PROJECT_DIR}}/.git remote add origin {{URL_REPOSITORY_ORIGIN}}",
+         command: "git remote add origin {{URL_REPOSITORY_ORIGIN}}",
          description: "add remote in origin in project",
          log: false
        }}

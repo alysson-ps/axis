@@ -79,11 +79,11 @@ defmodule Axis.CLI do
 
   defp deploy(branch) do
     with {:ok, file} <- File.open(Path.join([@rootDir, ".deployrc"]), [:read]) do
-      file
-      |> IO.read(:all)
-      |> Utils.json_decode(:config)
-      |> Map.update!(:repository, &Map.put(&1, :branch, branch))
-      |> start()
+        file
+        |> IO.read(:all)
+        |> Utils.json_decode(:config)
+        |> Map.update!(:repository, &Map.put(&1, :branch, branch))
+        |> start()
     else
       {:error, _} -> IO.puts("call the command init for create a config file deploy")
     end

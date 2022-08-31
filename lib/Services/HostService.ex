@@ -5,7 +5,6 @@ defmodule Axis.Services.HostService do
   alias Axis.Services.SSHService, as: SSHService
   alias Axis.Services.TasksService, as: TasksService
 
-
   def hosts(urls) do
     # get config of env elixir
     config = Application.fetch_env!(:ex_deployer, :config)
@@ -14,7 +13,6 @@ defmodule Axis.Services.HostService do
     dir = project.directory
 
     vars = %{
-      "{{PROJECT_DIR}}" => dir,
       "{{URL_REPOSITORY}}" => urls.deploy,
       "{{URL_REPOSITORY_ORIGIN}}" => urls.origin,
       "{{BRANCH}}" => branch
@@ -57,19 +55,17 @@ defmodule Axis.Services.HostService do
       #   conn
       # )
 
-      SSHService.execute(conn, ". testerc'") |> IO.inspect()
-      SSHService.execute(conn, "pwd") |> IO.inspect()
-
-
-      # tasks
-      # |> TasksService.run(
-      #   vars,
-      #   conn,
-      #   strategy,
-      #   %{
-      #     project_exist: exists
-      #   }
-      # )
+      tasks
+      |> TasksService.run(
+        vars,
+        conn,
+        strategy,
+        dir,
+        %{
+          project_exist: exists,
+          directory: dir
+        }
+      )
 
       # if !is_nil(env) do
       #   Outputs.info("recovering dotenv")
