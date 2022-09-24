@@ -12,12 +12,12 @@ defmodule Axis.Services.TasksService do
         else: checkout_tag() ++ tasks
 
     Enum.filter(tasks, fn task ->
-      if_key = elem(task, 0) |> Map.get(:if, true)
+      when_key = elem(task, 0) |> Map.get(:when, true)
 
-      if is_atom(if_key),
+      if is_atom(when_key),
         do: true,
         else:
-          Enum.reduce(if_key, true, fn current, prev ->
+          Enum.reduce(when_key, true, fn current, prev ->
             {key, valor} = current
             prev && params[key] == valor
           end)
@@ -62,12 +62,12 @@ defmodule Axis.Services.TasksService do
         else: checkout_tag() ++ tasks
 
     Enum.filter(tasks, fn task ->
-      if_key = elem(task, 0) |> Map.get(:if, true)
+      when_key = elem(task, 0) |> Map.get(:when, true)
 
-      if is_atom(if_key),
+      if is_atom(when_key),
         do: true,
         else:
-          Enum.reduce(if_key, true, fn current, prev ->
+          Enum.reduce(when_key, true, fn current, prev ->
             {key, valor} = current
             prev && params[key] == valor
           end)

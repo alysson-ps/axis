@@ -21,7 +21,10 @@ defmodule Axis.Validator do
             "driver" => %{
               "type" => "string",
               "minLength" => 1,
-              "pattern" => "^(gitlab)|(github)$"
+              "enum" => [
+                "gitlab",
+                "github"
+              ]
             },
             "project_id" => %{
               "type" => "integer"
@@ -59,7 +62,7 @@ defmodule Axis.Validator do
                 "send_to" => %{
                   "type" => "array",
                   "minItems" => 0,
-                  "uniqueItems" => true,
+                  "uniqueItems" => true
                 }
               }
             }
@@ -140,10 +143,13 @@ defmodule Axis.Validator do
         "strategy" => %{
           "type" => "string",
           "minLength" => 1,
-          "pattern" => "^(clone-always)|(checkout-tag)$"
+          "enum" => [
+            "clone-always",
+            "checkout-tag"
+          ]
         },
         "debug" => %{
-          "type" => "boolean",
+          "type" => "boolean"
         }
       },
       "required" => [
@@ -151,7 +157,7 @@ defmodule Axis.Validator do
         "repository",
         "hosts",
         "project",
-        "env",
+        "env"
       ],
       "additionalProperties" => false
     }

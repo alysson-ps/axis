@@ -1,18 +1,12 @@
 defmodule Axis.CLI do
+  @dialyzer {:nowarn_function, start: 1, deploy: 1}
+
   alias Axis.Utils, as: Utils
-  # alias Axis.Services.SSHService, as: SSHService
-  # alias Axis.Services.TasksService, as: TasksService
-  # alias Axis.Services.ServerService, as: ServerService
-  # alias Axis.Services.ProjectService, as: ProjectService
   alias Axis.Services.HostService, as: HostService
   alias Axis.Module.Driver, as: GitDriver
 
-  # alias Axis.Services.Email.BackupEnvService, as: BackupEnvService
-  # alias Axis.Mailer, as: Mailer
-
   @rootDir File.cwd!()
 
-  @spec main([binary]) :: :ok | list | {:error, atom}
   def main(args \\ []) do
     try do
       optimus =
@@ -44,7 +38,7 @@ defmodule Axis.CLI do
           ]
         )
 
-      {opts, args} = Optimus.parse!(optimus, args)
+      {opts, args} = Optimus.parse! optimus, args
 
       case List.first(opts) do
         :deploy ->
@@ -70,23 +64,29 @@ defmodule Axis.CLI do
             end)
 
           if {:unix, :linux} == :os.type(),
-            do: Axis.Outputs.banner(:configError)
+            do: Axis.Outputs.banner :configError
 
-          Prompt.table([["json key", "message error"]] ++ errors, header: true)
+          Prompt.table [["json key", "message error"]] ++ errors, header: true
         end
     end
+
+    :ok
   end
 
   defp deploy(branch) do
-    with {:ok, file} <- File.open(Path.join([@rootDir, ".deployrc"]), [:read]) do
+    deployrc = File.open(Path.join([@rootDir, ".deployrc"]), [:read])
+
+    with {:ok, file} <- deployrc do
         file
         |> IO.read(:all)
         |> Utils.json_decode(:config)
         |> Map.update!(:repository, &Map.put(&1, :branch, branch))
         |> start()
     else
-      {:error, _} -> IO.puts("call the command init for create a config file deploy")
+      {:error, _} -> IO.puts "call the command init for create a config file deploy"
     end
+
+    :ok
   end
 
   defp init do
@@ -99,6 +99,7 @@ defmodule Axis.CLI do
     {:ok, file} = File.open(".deployrc", [:write])
     IO.write(file, deployrc)
     File.close(file)
+    :ok
   end
 
   defp start(%{repository: repository} = config) do
@@ -108,10 +109,11 @@ defmodule Axis.CLI do
 
     {:ok, remotes} = driver.get_remote_url(repository)
 
-    if !driver.tag_exist(repository) do
+    if !driver.tag_exist repository do
       throw("the informed tag does not exist")
     end
 
     HostService.hosts(remotes)
+    :ok
   end
 end
