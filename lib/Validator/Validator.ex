@@ -159,7 +159,7 @@ defmodule Axis.Validator do
         "project",
         "env"
       ],
-      "additionalProperties" => false
+      "additionalProperties" => true
     }
   end
 end

@@ -1,3 +1,3 @@
 defmodule Axis.Mailer do
-  use Bamboo.Mailer, otp_app: :ex_deployer
+  use Bamboo.Mailer, otp_app: :axis
 end

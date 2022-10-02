@@ -1,13 +1,16 @@
 defmodule Axis.CLI do
   @dialyzer {:nowarn_function, start: 1, deploy: 1}
+  @rootDir File.cwd!()
 
   alias Axis.Utils, as: Utils
+  alias Axis.Outputs, as: Outputs
   alias Axis.Services.HostService, as: HostService
   alias Axis.Module.Driver, as: GitDriver
 
-  @rootDir File.cwd!()
-
   def main(args \\ []) do
+    hasArgs = length(args) > 0
+    args = if hasArgs, do: args, else: ["--help"]
+
     try do
       optimus =
         Optimus.new!(
@@ -38,7 +41,7 @@ defmodule Axis.CLI do
           ]
         )
 
-      {opts, args} = Optimus.parse! optimus, args
+      {opts, args} = Optimus.parse!(optimus, args)
 
       case List.first(opts) do
         :deploy ->
@@ -64,56 +67,53 @@ defmodule Axis.CLI do
             end)
 
           if {:unix, :linux} == :os.type(),
-            do: Axis.Outputs.banner :configError
+            do: Axis.Outputs.banner(:configError)
 
-          Prompt.table [["json key", "message error"]] ++ errors, header: true
+          Prompt.table([["json key", "message error"]] ++ errors, header: true)
         end
     end
-
-    :ok
   end
 
   defp deploy(branch) do
     deployrc = File.open(Path.join([@rootDir, ".deployrc"]), [:read])
 
     with {:ok, file} <- deployrc do
-        file
-        |> IO.read(:all)
-        |> Utils.json_decode(:config)
-        |> Map.update!(:repository, &Map.put(&1, :branch, branch))
-        |> start()
+      file
+      |> IO.read(:all)
+      |> Utils.json_decode(:config)
+      |> Map.update!(:repository, &Map.put(&1, :branch, branch))
+      |> start()
     else
-      {:error, _} -> IO.puts "call the command init for create a config file deploy"
+      {:error, _} -> IO.puts("call the command init for create a config file deploy")
     end
-
-    :ok
   end
 
   defp init do
-    deployrc =
-      Application.fetch_env!(
-        :ex_deployer,
-        Axis.DeployResource
-      )
+    deployrc = Application.fetch_env!(:axis, Axis.DeployResource)
 
     {:ok, file} = File.open(".deployrc", [:write])
     IO.write(file, deployrc)
     File.close(file)
-    :ok
   end
 
   defp start(%{repository: repository} = config) do
-    Application.put_env(:ex_deployer, :config, config)
-
+    Application.put_env(:axis, :config, config)
     driver = repository.driver |> GitDriver.import()
 
     {:ok, remotes} = driver.get_remote_url(repository)
 
-    if !driver.tag_exist repository do
+    if config.strategy == "clone-always" && config.env.backup.active == false do
+      Outputs.info(
+        "Warning: is recommended to turn on env backup when using clone-always strategy"
+      )
+    end
+
+    if !driver.tag_exist(repository) do
       throw("the informed tag does not exist")
     end
 
-    HostService.hosts(remotes)
-    :ok
+    if config.multithreading,
+      do: HostService.hosts_async(remotes),
+      else: HostService.hosts(remotes)
   end
 end

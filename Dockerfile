@@ -6,3 +6,6 @@ RUN apt update && apt install iproute2 wget php openssh-server git php-xml php-g
 # install composer
 RUN wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | php -- --quiet
 RUN mv composer.phar /usr/bin/composer
+
+RUN sudo useradd test-user-0
+RUN echo test-user-0:U6aMy0wojraho | sudo chpasswd -e

@@ -1,29 +1,12 @@
 defmodule Axis.Services.ProjectService do
-  @perms """
-  chgrp -Rf www-data {{PROJECT_DIR}}/storage {{PROJECT_DIR}}/bootstrap &&
-  chmod -Rf ug+rwx {{PROJECT_DIR}}/storage {{PROJECT_DIR}}/bootstrap &&
-  chown $USER:www-data PROJECT_DIR -Rf &&
-  chmod -Rf 775 {{PROJECT_DIR}}/storage {{PROJECT_DIR}}/bootstrap
-  """
-
   alias Axis.Services.SSHService, as: SSHService
   alias Axis.Services.ServerService, as: ServerService
   alias Axis.Services.Email.BackupEnvService, as: BackupEnvService
   alias Axis.Mailer, as: Mailer
-  alias Axis.Utils, as: Utils
-
-  def storage_perms(conn, dir) do
-    cmd =
-      Utils.parser_vars(@perms, %{
-        "{{PROJECT_DIR}}" => dir
-      })
-
-    SSHService.execute(conn, cmd)
-  end
 
   def enviroment(exists, dir, conn) do
     # SSHService.execute(conn, "rm -r #{dir}")
-    config = Application.fetch_env!(:ex_deployer, :config)
+    config = Application.fetch_env!(:axis, :config)
 
     %{env: %{backup: %{active: active, send_to: emails}}} = config
 
@@ -53,10 +36,4 @@ defmodule Axis.Services.ProjectService do
       end
     end
   end
-
-  # defp save_enviroment(content) do
-  #   {:ok, path} = Briefly.create()
-  #   File.write!(path, content)
-  #   path
-  # end
 end

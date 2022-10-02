@@ -1,21 +1,27 @@
 defmodule Axis.Services.HostService do
   alias Axis.Outputs, as: Outputs
-  # alias Axis.Services.ProjectService, as: ProjectService
   alias Axis.Services.ServerService, as: ServerService
   alias Axis.Services.SSHService, as: SSHService
   alias Axis.Services.TasksService, as: TasksService
 
   def hosts(urls) do
-    # get config of env elixir
-    config = Application.fetch_env!(:ex_deployer, :config)
-    %{project: project, hosts: hosts, repository: %{branch: branch}, strategy: strategy} = config
+    config = Application.fetch_env!(:axis, :config)
+
+    %{
+      project: project,
+      hosts: hosts,
+      repository: %{branch: branch},
+      strategy: strategy,
+      debug: debug
+    } = config
 
     dir = project.directory
 
     vars = %{
       "{{URL_REPOSITORY}}" => urls.deploy,
       "{{URL_REPOSITORY_ORIGIN}}" => urls.origin,
-      "{{BRANCH}}" => branch
+      "{{BRANCH}}" => branch,
+      "{{PROJECT_DIR}}" => dir
     }
 
     hosts
@@ -24,13 +30,7 @@ defmodule Axis.Services.HostService do
 
       {vars, dir} =
         if Map.has_key?(values, :directory),
-          do:
-            {%{
-               "{{PROJECT_DIR}}" => values.directory,
-               "{{URL_REPOSITORY}}" => urls.deploy,
-               "{{URL_REPOSITORY_ORIGIN}}" => urls.origin,
-               "{{BRANCH}}" => branch
-             }, values.directory},
+          do: {%{vars | "{{PROJECT_DIR}}" => values.directory}, values.directory},
           else: {vars, dir}
 
       # connection ssh
@@ -47,13 +47,6 @@ defmodule Axis.Services.HostService do
       exists = conn |> ServerService.has(dir, :directory)
 
       Outputs.info("the project exists in server: #{exists}")
-      # Outputs.info("saving dotenv (.env) in file temp", :newline)
-
-      # ProjectService.enviroment(
-      #   exists,
-      #   dir,
-      #   conn
-      # )
 
       tasks
       |> TasksService.run(
@@ -63,25 +56,79 @@ defmodule Axis.Services.HostService do
         dir,
         %{
           project_exist: exists,
-          directory: dir
+          directory: dir,
+          debug: debug
         }
       )
 
-      # if !is_nil(env) do
-      #   Outputs.info("recovering dotenv")
-
-      #   ProgressBar.render_spinner([frames: :braille], fn ->
-      #     # get_enviroment(env, conn, dir)
-      #   end)
-      # else
-      #   {:ok, _} = SSHService.execute(conn, "cp #{dir}/.env.example #{dir}/.env")
-      #   {:ok, _} = SSHService.execute(conn, "php #{dir}/artisan key:generate")
-      # end
-
-      # ProjectService.storage_perms(conn, dir)
-
       Outputs.info("Closing ssh connection")
       Process.exit(conn, :normal)
+    end)
+  end
+
+  def hosts_async(urls) do
+    config = Application.fetch_env!(:axis, :config)
+
+    %{
+      project: project,
+      hosts: hosts,
+      repository: %{branch: branch},
+      strategy: strategy,
+      debug: debug
+    } = config
+
+    dir = project.directory
+
+    vars = %{
+      "{{URL_REPOSITORY}}" => urls.deploy,
+      "{{URL_REPOSITORY_ORIGIN}}" => urls.origin,
+      "{{BRANCH}}" => branch,
+      "{{PROJECT_DIR}}" => dir
+    }
+
+    hosts
+    |> Enum.each(fn {host, %{user: user, password: password, tasks: tasks} = values} ->
+      spawn(fn ->
+        Outputs.info("Deploying #{project.name} to #{host} - branch: #{branch}")
+
+        {vars, dir} =
+          if Map.has_key?(values, :directory),
+            do: {%{vars | "{{PROJECT_DIR}}" => values.directory}, values.directory},
+            else: {vars, dir}
+
+        # connection ssh
+        conn =
+          SSHService.connect(%{
+            host: host,
+            user: user,
+            password: password
+          })
+
+        if is_nil(conn), do: throw("error connecting to server")
+
+        # verify if project exists
+        exists = conn |> ServerService.has(dir, :directory)
+
+        Outputs.info("the project exists in server: #{exists}")
+
+        tasks
+        |> TasksService.run(
+          vars,
+          conn,
+          strategy,
+          dir,
+          %{
+            project_exist: exists,
+            directory: dir,
+            debug: debug
+          }
+        )
+
+        Outputs.info("Closing ssh connection")
+        Process.exit(conn, :normal)
+      end)
+      |> Process.info()
+      |> IO.inspect()
     end)
   end
 end

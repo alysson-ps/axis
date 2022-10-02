@@ -27,9 +27,14 @@ defmodule Axis.Services.TasksService do
       task = elem(task, 0)
 
       command =
+        if Map.get(task, :add_prefix, true),
+          do: "cd #{directory} && /usr/bin/env " <> task.command,
+          else: task.command
+
+      command =
         if task.log,
-          do: "cd #{directory} && /usr/bin/env " <> task.command <> " | tee -a Axis.log",
-          else: "cd #{directory} && /usr/bin/env " <> task.command
+          do: command <> " | tee -a Axis.log",
+          else: command
 
       command = Utils.parser_vars(command, maps_vars)
 
@@ -77,9 +82,14 @@ defmodule Axis.Services.TasksService do
       task = elem(task, 0)
 
       command =
+        if Map.get(task, :add_prefix, true),
+          do: "cd #{directory} && /usr/bin/env " <> task.command,
+          else: task.command
+
+      command =
         if task.log,
-          do: "cd #{directory} && /usr/bin/env " <> task.command <> " | tee -a Axis.log",
-          else: "cd #{directory} && /usr/bin/env " <> task.command
+          do: command <> " | tee -a Axis.log",
+          else: command
 
       command = Utils.parser_vars(command, maps_vars)
 
@@ -99,7 +109,9 @@ defmodule Axis.Services.TasksService do
         prefix: "with log"
       )
 
-      SSHService.execute(conn, command) |> IO.inspect()
+      IO.inspect(command)
+
+      SSHService.execute(conn, command)
     end)
   end
 
@@ -150,12 +162,14 @@ defmodule Axis.Services.TasksService do
          command:
            "git clone --origin deploy --branch {{BRANCH}} {{URL_REPOSITORY}} {{PROJECT_DIR}}",
          description: "clone project in dir",
-         log: false
+         log: false,
+         add_prefix: false
        }},
       {%{
-         command: "git remote add origin {{URL_REPOSITORY_ORIGIN}}",
+         command: "git --git-dir={{PROJECT_DIR}}/.git remote add origin {{URL_REPOSITORY_ORIGIN}}",
          description: "add remote in origin in project",
-         log: false
+         log: false,
+         add_prefix: false
        }}
     ]
   end
